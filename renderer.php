@@ -24,6 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+use qtype_regexp\cloudpoodll\utils;
+use qtype_regexp\cloudpoodll\constants;
+
 
 /**
  * Generates the output for regexp questions.
@@ -69,7 +72,7 @@ class qtype_regexp_renderer extends qtype_renderer {
         // Removed for compatibility with the Embed questions plugin see https://moodle.org/plugins/filter_embedquestion.
 
         $inputattributes = array(
-            'type' => 'text',
+            'type' => 'hidden',
             'name' => $inputname,
             'value' => $currentanswer,
             'id' => $inputname,
@@ -99,6 +102,9 @@ class qtype_regexp_renderer extends qtype_renderer {
         }
 
         $input = html_writer::empty_tag('input', $inputattributes) . $feedbackimg;
+        //insert recorder
+        $r_options = get_config('qtype_speakautograde');
+        $input .= $this->fetch_recorder($r_options, $question, $inputname);
 
         if ($placeholder) {
             $questiontext = substr_replace($questiontext, $input,
@@ -262,5 +268,183 @@ class qtype_regexp_renderer extends qtype_renderer {
             $displayresponses .= print_collapsible_region_end(true);
         }
         return $displayresponses;
+    }
+
+    /**
+     * @return string the HTML for the player
+     */
+    protected function fetch_player($recordertype, $mediaurl,$language, $havesubtitles=false) {
+        global $PAGE;
+
+        $playerid= html_writer::random_id(constants::M_COMPONENT . '_');
+
+        //audio player template
+        $audioplayer = "<audio id='@PLAYERID@' crossorigin='anonymous' controls='true'>";
+        $audioplayer .= "<source src='@MEDIAURL@'>";
+        if($havesubtitles){$audioplayer .= "<track src='@VTTURL@' kind='captions' srclang='@LANG@' label='@LANG@' default='true'>";}
+        $audioplayer .= "</audio>";
+
+        //video player template
+        $videoplayer = "<video id='@PLAYERID@' crossorigin='anonymous' controls='true'>";
+        $videoplayer .= "<source src='@MEDIAURL@'>";
+        if($havesubtitles){$videoplayer .= "<track src='@VTTURL@' kind='captions' srclang='@LANG@' label='@LANG@' default='true'>";}
+        $videoplayer .= "</video>";
+
+        //template -> player
+        $theplayer = ($recordertype == constants::REC_VIDEO ? $videoplayer : $audioplayer);
+        $theplayer =str_replace('@PLAYERID@',$playerid,$theplayer);
+        $theplayer =str_replace('@MEDIAURL@',$mediaurl,$theplayer);
+        $theplayer =str_replace('@LANG@',$language,$theplayer);
+        $theplayer =str_replace('@VTTURL@',$mediaurl . '.vtt',$theplayer);
+
+        $ret = $theplayer;
+
+        //if we have subtitles add the transcript AMD and html (we never need subtitles/interactive transcripts .. do we?)
+        if($havesubtitles) {
+            $transcript_containerid= html_writer::random_id(constants::M_COMPONENT . '_');
+            $transcript_container = html_writer::div('',constants::M_COMPONENT . '_transcriptcontainer',array('id'=>$transcript_containerid));
+            $ret  .= $transcript_container;
+
+            //prepare AMD javascript for displaying transcript
+            $transcriptopts = array('component' => constants::M_COMPONENT, 'playerid' => $playerid, 'containerid' => $transcript_containerid, 'cssprefix' => constants::M_COMPONENT . '_transcript');
+            $PAGE->requires->js_call_amd(constants::M_COMPONENT . "/interactivetranscript", 'init', array($transcriptopts));
+            $PAGE->requires->strings_for_js(array('transcripttitle'), constants::M_COMPONENT);
+        }
+        return $ret;
+
+    }
+
+    /**
+     * @return string the HTML for the textarea.
+     */
+    protected function fetch_recorder($r_options, $question, $inputname) {
+        global $CFG;
+
+        $width = '';
+        $height = '';
+        switch($question->recordertype) {
+
+            case constants::REC_AUDIO:
+                $recordertype = constants::REC_AUDIO;
+                $recorderskin = $question->audioskin;
+                switch ($question->audioskin) {
+                    case constants::SKIN_FRESH:
+                        $width = '400';
+                        $height = '300';
+                        break;
+                    case constants::SKIN_PLAIN:
+                        $width = '360';
+                        $height = '190';
+                        break;
+                    default:
+                        // bmr 123 once standard
+                        $width = '360';
+                        $height = '240';
+                }
+                break;
+
+            case constants::REC_VIDEO:
+            default:
+                $recordertype = constants::REC_VIDEO;
+                $recorderskin = $question->videoskin;
+                switch ($question->videoskin) {
+                    case constants::SKIN_BMR:
+                        $width = '360';
+                        $height = '450';
+                        break;
+                    case constants::SKIN_123:
+                        $width = '450';
+                        $height = '550';
+                        break;
+                    case constants::SKIN_ONCE:
+                        $width = '350';
+                        $height = '290';
+                        break;
+                    default:
+                        $width = '360';
+                        $height = '410';
+                }
+        }
+
+        // amazon transcribe
+        $transcriber = "chrome";
+        if ($question->transcriber == constants::TRANSCRIBER_AMAZON_TRANSCRIBE) {
+            $can_transcribe = utils::can_transcribe($r_options);
+            $amazontranscribe = ($can_transcribe ? '1' : '0');
+            $transcriber = "amazon";
+        } else {
+            $amazontranscribe = 0;
+        }
+
+        // chrometranscribe
+        if ($question->transcriber == constants::TRANSCRIBER_CHROME) {
+            $chrometranscribe = '1';
+        } else {
+            $chrometranscribe = 0;
+        }
+
+        // transcode
+        $transcode = ($question->transcode  ? '1' : '0');
+
+        // time limit
+        $timelimit = $question->timelimit;
+
+        // fetch cloudpoodll token
+        $api_user = get_config(constants::M_COMPONENT, 'apiuser');
+        $api_secret = get_config(constants::M_COMPONENT, 'apisecret');
+        $token = utils::fetch_token($api_user, $api_secret);
+
+
+        // any recorder hints ... go here..
+        $hints = new \stdClass();
+        $string_hints = base64_encode (json_encode($hints));
+
+        // the elementid of the div in the DOM
+        $dom_id = html_writer::random_id('');
+
+        $recorderdiv = \html_writer::div('', constants::M_COMPONENT.'_notcenter',
+            array('id' => $dom_id,
+                'data-id' => 'therecorder_'.$dom_id,
+                'data-parent' => $CFG->wwwroot,
+                'data-localloader' => constants::LOADER_URL,
+                'data-media' => $recordertype,
+                'data-appid' => constants::APPID,
+                'data-type' => $recorderskin,
+                'data-width' => $width,
+                'data-height' => $height,
+                'data-updatecontrol' => $inputname,
+                'data-timelimit' => $timelimit,
+                'data-transcode' => $transcode,
+                'data-transcribe' => $amazontranscribe,
+                'data-subtitle' => $amazontranscribe,
+                'data-speechevents' => $chrometranscribe,
+                'data-language' => $question->language,
+                'data-expiredays' => $question->expiredays,
+                'data-region' => $r_options->awsregion,
+                'data-fallback' => $r_options->fallback,
+                'data-hints' => $string_hints,
+                'data-token' => $token // localhost
+                //'data-token' => '643eba92a1447ac0c6a882c85051461a' // cloudpoodll
+            )
+        );
+
+        $containerdiv = \html_writer::div($recorderdiv, constants::CLASS_REC_CONTAINER.' ',
+            array('id' => constants::CLASS_REC_CONTAINER.$dom_id));
+
+        // this is the finalhtml
+        $recorderhtml = \html_writer::div($containerdiv , constants::CLASS_REC_OUTER);
+
+        // set up the AMD for the recorder
+        $opts = array(
+            'component' => constants::M_COMPONENT,
+            'dom_id' => $dom_id,
+            'inputname' => $inputname,
+            'transcriber'=>$transcriber
+        );
+
+        $this->page->requires->js_call_amd(constants::M_COMPONENT.'/cloudpoodllhelper', 'init', array($opts));
+        //$PAGE->requires->strings_for_js(array('reallydeletesubmission'), constants::M_COMPONENT);
+
+        return $recorderhtml;
     }
 }

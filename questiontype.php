@@ -27,6 +27,9 @@ require_once($CFG->libdir . '/questionlib.php');
 require_once($CFG->dirroot . '/question/engine/lib.php');
 require_once($CFG->dirroot . '/question/type/regexp/question.php');
 
+use qtype_regexp\cloudpoodll\constants;
+use qtype_regexp\cloudpoodll\utils;
+
 /**
  * The question type class for the regexp question type.
  *
@@ -41,7 +44,8 @@ class qtype_regexp extends question_type {
      * @return array
      */
     public function extra_question_fields() {
-        return array('qtype_regexp', 'usehint', 'usecase', 'studentshowalternate');
+        return array('qtype_regexp', 'usehint', 'usecase', 'studentshowalternate','recordertype','timelimit', 'language', 'expiredays',
+            'transcriber', 'transcode', 'audioskin', 'videoskin');
     }
 
     /**
@@ -137,6 +141,25 @@ class qtype_regexp extends question_type {
         }
         if (isset($SESSION->qtype_regexp_question->alternatecorrectanswers[$qid])) {
             unset($SESSION->qtype_regexp_question->alternatecorrectanswers[$qid]);
+        }
+
+        //Cloud Poodll
+
+        // save Poodll options
+        $optionstable = constants::M_TABLE;
+
+        if ($options = $DB->get_record($optionstable, array('questionid' => $question->id))) {
+            $options->recordertype = $question->recordertype;
+            $options->timelimit = $question->timelimit;
+            $options->language = $question->language;
+            $options->expiredays = $question->expiredays;
+            $options->transcode = $question->transcode;
+            $options->transcriber = $question->transcriber;
+            $options->audioskin = $question->audioskin;
+            $options->videoskin = $question->videoskin;
+            return $DB->update_record($optionstable, $options);
+        } else {
+            return false; // no options - shouldn't happen !!
         }
     }
 

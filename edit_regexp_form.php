@@ -23,6 +23,9 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
+use qtype_regexp\cloudpoodll\constants;
+use qtype_regexp\cloudpoodll\utils;
+
 /**
  * Editing form for the regexp question type
  * @copyright  2011 Joseph REZEAU
@@ -76,10 +79,14 @@ class qtype_regexp_edit_form extends question_edit_form {
         $this->add_per_answer_fields($mform, get_string('answerno', 'qtype_shortanswer', '{no}'),
                 question_bank::fraction_options());
 
+        //add cloud poodll
+        $this->add_cloudpoodll();
+
         $this->add_interactive_settings();
 
         $mform->addElement('header', 'showhidealternate', get_string('showhidealternate', 'qtype_regexp'));
         $mform->addHelpButton('showhidealternate', 'showhidealternate', 'qtype_regexp');
+
 
         $buttonarray = array();
         $buttonarray[] = $mform->createElement('submit', 'showalternate', get_string('calculatealternate', 'qtype_regexp'));
@@ -347,6 +354,72 @@ class qtype_regexp_edit_form extends question_edit_form {
                         $withclearwrong, $withshownumpartscorrect);
         $this->repeat_elements($repeated, $repeatsatstart, $repeatedoptions,
                         'numhints', 'addhint', 1, get_string('addanotherhint', 'question'), true);
+    }
+
+    protected function add_cloudpoodll(){
+
+        $mform = $this->_form;
+        $config = get_config(constants::M_COMPONENT);
+
+        $mform->addElement('header', 'showhidecloudpoodll', get_string('showhidecloudpoodll', constants::M_COMPONENT));
+
+        //timelimit
+        $name = 'recordertype';
+        $label = get_string($name, constants::M_COMPONENT);
+        $options = utils::fetch_options_recorders();
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault($name, $config->$name);
+
+        //timelimit
+        $name = 'timelimit';
+        $label = get_string($name, constants::M_COMPONENT);
+        $options = utils::get_timelimit_options();
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault($name, 60);
+
+        //language options
+        $name = 'language';
+        $label = get_string($name, constants::M_COMPONENT);
+        $options = utils::get_lang_options();
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault($name, $config->$name);
+
+        //audioskin
+        $name = 'audioskin';
+        $label = get_string($name, constants::M_COMPONENT);
+        $type = constants::REC_AUDIO;
+        $options = utils::fetch_options_skins($type);
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault('audioskin', $config->$name);
+
+        //videoskin
+        $name = 'videoskin';
+        $label = get_string($name, constants::M_COMPONENT);
+        $type = constants::REC_VIDEO;
+        $options = utils::fetch_options_skins($type);
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault($name, $config->$name);
+
+        //transcriber
+        $name = 'transcriber';
+        $label = get_string($name, constants::M_COMPONENT);
+        $options = utils::fetch_options_transcribers();
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault($name, $config->$name);
+
+        //transcode
+        $name = 'transcode';
+        $label = get_string($name, constants::M_COMPONENT);
+        $text = get_string('transcode_details', constants::M_COMPONENT);
+        $mform->addElement('advcheckbox', $name, $label, $text);
+        $mform->setDefault($name, $config->$name);
+
+        //expiredays
+        $name = 'expiredays';
+        $label = get_string($name, constants::M_COMPONENT);
+        $options = utils::get_expiredays_options();
+        $mform->addElement('select', $name, $label, $options);
+        $mform->setDefault($name, $config->$name);
     }
 
     /**

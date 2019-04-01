@@ -10,6 +10,15 @@
         <FIELD NAME="usehint" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="answers" NEXT="usecase"/>
         <FIELD NAME="usecase" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="usehint" NEXT="studentshowalternate"/>
         <FIELD NAME="studentshowalternate" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false"  PREVIOUS="usecase" />
+        <FIELD NAME="timelimit" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" />
+        <FIELD NAME="recordertype" TYPE="char" LENGTH="255" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" DEFAULT="none" COMMENT="the recordertype"/>
+        <FIELD NAME="language" TYPE="char" LENGTH="255" NOTNULL="true" UNSIGNED="true" SEQUENCE="false" DEFAULT="none" COMMENT="the speaker language"/>
+        <FIELD NAME="expiredays" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="100" SEQUENCE="false" />
+        <FIELD NAME="transcode" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Tramscode to MP3 or not"/>
+        <FIELD NAME="transcriber" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" DEFAULT="chrome" COMMENT="transcriptionengine" />
+        <FIELD NAME="audioskin" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" DEFAULT="onetwothree" COMMENT="audio recorder skin" />
+        <FIELD NAME="videoskin" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" DEFAULT="onetwothree" COMMENT="video recorder skin" />
+
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="questionid"/>

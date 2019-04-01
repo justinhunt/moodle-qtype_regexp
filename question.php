@@ -56,14 +56,14 @@ class qtype_regexp_question extends question_graded_by_strategy
      * Get expected data.
      */
     public function get_expected_data() {
-        return array('answer' => PARAM_RAW_TRIMMED);
+        return array('answer' => PARAM_RAW_TRIMMED, 'audiourl'=>PARAM_URL);
     }
 
     /**
      * Get data.
      */
     public function get_data() {
-        return array('answer' => PARAM_RAW_TRIMMED);
+        return array('answer' => PARAM_RAW_TRIMMED, 'audiourl'=>PARAM_URL);
     }
 
     /**
