@@ -48,9 +48,14 @@ class qtype_regexp_renderer extends qtype_renderer {
         global $CFG, $currentanswerwithhint;
         require_once($CFG->dirroot.'/question/type/regexp/locallib.php');
         $question = $qa->get_question();
-        $inputname = $qa->get_qt_field_name('answer');
+
+        $answer_field_name = $qa->get_qt_field_name('answer');
+        $audiourl_field_name = $qa->get_qt_field_name('audiourl');
+
+
         $ispreview = !isset($options->attempt);
         $currentanswer = remove_blanks ($qa->get_last_qt_var('answer') );
+        $currentaudiourl = remove_blanks ($qa->get_last_qt_var('audiourl') );
         $response = $qa->get_last_qt_data();
         $laststep = $qa->get_reverse_step_iterator();
         $hintadded = false;
@@ -73,10 +78,9 @@ class qtype_regexp_renderer extends qtype_renderer {
 
         $inputattributes = array(
             'type' => 'hidden',
-            'name' => $inputname,
+            'name' => $answer_field_name,
             'value' => $currentanswer,
-            'id' => $inputname,
-            'size' => 80,
+            'id' => $answer_field_name
         );
 
         if ($options->readonly) {
@@ -102,9 +106,25 @@ class qtype_regexp_renderer extends qtype_renderer {
         }
 
         $input = html_writer::empty_tag('input', $inputattributes) . $feedbackimg;
+
+        //insert audio url field
+        $audiourl = html_writer::empty_tag(
+            'input', array('type' => 'hidden',
+            'name' => $audiourl_field_name,
+            'value' => $currentaudiourl));
+        $input .= $audiourl;
+
+
         //insert recorder
-        $r_options = get_config('qtype_speakautograde');
-        $input .= $this->fetch_recorder($r_options, $question, $inputname);
+        if ($options->readonly) {
+            $inputattributes['readonly'] = 'readonly';
+            $audiourl = ($qa->get_last_qt_var('audiourl') );
+            $input .= '<br>' . $this->fetch_player($question->recordertype,$audiourl, $question->language, false);
+        }else {
+            $r_options = get_config('qtype_speakautograde');
+            $input .= $this->fetch_recorder($r_options, $question, $answer_field_name,$audiourl_field_name);
+        }
+
 
         if ($placeholder) {
             $questiontext = substr_replace($questiontext, $input,
@@ -317,7 +337,7 @@ class qtype_regexp_renderer extends qtype_renderer {
     /**
      * @return string the HTML for the textarea.
      */
-    protected function fetch_recorder($r_options, $question, $inputname) {
+    protected function fetch_recorder($r_options, $question, $answer_field_name,$audiourl_field_name) {
         global $CFG;
 
         $width = '';
@@ -412,7 +432,7 @@ class qtype_regexp_renderer extends qtype_renderer {
                 'data-type' => $recorderskin,
                 'data-width' => $width,
                 'data-height' => $height,
-                'data-updatecontrol' => $inputname,
+                'data-updatecontrol' => $answer_field_name,
                 'data-timelimit' => $timelimit,
                 'data-transcode' => $transcode,
                 'data-transcribe' => $amazontranscribe,
@@ -438,7 +458,8 @@ class qtype_regexp_renderer extends qtype_renderer {
         $opts = array(
             'component' => constants::M_COMPONENT,
             'dom_id' => $dom_id,
-            'inputname' => $inputname,
+            'answerfieldname' => $answer_field_name,
+            'audiourlfieldname' => $audiourl_field_name,
             'transcriber'=>$transcriber
         );
 

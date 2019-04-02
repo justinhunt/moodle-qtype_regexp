@@ -10,7 +10,8 @@ define(["jquery", "core/log", "qtype_regexp/cloudpoodllloader"], function($, log
         init:  function(opts) {
             this.component = opts["component"];
             this.dom_id = opts["dom_id"];
-            this.inputname = opts["inputname"];
+            this.answerfieldname = opts["answerfieldname"];
+            this.audiourlfieldname = opts["audiourlfieldname"];
             this.transcriber = opts["transcriber"];
 
             this.register_controls();
@@ -55,11 +56,13 @@ define(["jquery", "core/log", "qtype_regexp/cloudpoodllloader"], function($, log
         },
 
         register_controls: function(){
-          var name = CSS.escape(this.inputname);
+          var answerfieldname = CSS.escape(this.answerfieldname);
+          var audiourlfieldname = CSS.escape(this.audiourlfieldname);
           this.controls = {
-            audiourl :   $("input[name=" + name + "audiourl]"),
-            transcript : $("input[name=" + name + "transcript]"),
-            answer :     $("input[name=" + name + "]"),
+            answer :   $("input[name=" + answerfieldname + "]"),
+            audiourl :     $("input[name=" + audiourlfieldname + "]"),
+              //unused currently
+            transcript : $("input[name=" + answerfieldname + "transcript]"),
           };
         },
 
