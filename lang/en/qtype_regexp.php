@@ -150,6 +150,7 @@ $string['skinfresh'] = 'Fresh (audio only)';
 $string['skin123'] = 'One Two Three';
 $string['skinonce'] = 'Once';
 $string['skinupload'] = 'Upload';
+$string['skinpush'] = 'Push';
 
 $string['fallback'] = 'non-HTML5 Fallback';
 $string['fallback_details'] = 'If the browser does not support HTML5 recording for the selected mediatype, fallback to an upload screen or a warning.';

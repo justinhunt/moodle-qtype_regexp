@@ -73,6 +73,7 @@ class utils
                 $rec_options[constants::SKIN_FRESH]=get_string("skinfresh", constants::M_COMPONENT);
                 $rec_options[constants::SKIN_ONCE]=get_string("skinonce", constants::M_COMPONENT);
                 $rec_options[constants::SKIN_UPLOAD]=get_string("skinupload", constants::M_COMPONENT);
+                $rec_options[constants::SKIN_PUSH]=get_string("skinpush", constants::M_COMPONENT);
                 break;
             case constants::REC_VIDEO:
             default:
